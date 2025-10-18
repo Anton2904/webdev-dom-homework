@@ -65,7 +65,77 @@
 
   <script>
     "use strict";
-    // Код писать здесь
+    const formNameEl = document.querySelector('.add-form-name');
+    const formCommentEl = document.querySelector('.add-form-text');
+    const buttonEl = document.querySelector('.add-form-button');
+
+    const commentsListEl = document.querySelector('.comments');
+
+    function getCurrentDateTime() {
+      const now = new Date();
+
+      const day = String(now.getDate()).padStart(2, '0');
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const year = String(now.getFullYear()).slice(-2);
+      
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      
+      return `${day}.${month}.${year} ${hours}:${minutes}`;
+    }
+
+
+    buttonEl.addEventListener('click', () => {
+     
+      const name = formNameEl.value.trim();
+      const comment = formCommentEl.value.trim();
+      
+      
+      if (!name || !comment) {
+        alert('Пожалуйста, заполните все поля');
+        return;
+      }
+
+      const newCommentHTML = `
+        <li class="comment">
+          <div class="comment-header">
+            <div>${name}</div>
+            <div>${getCurrentDateTime()}</div>
+          </div>
+          <div class="comment-body">
+            <div class="comment-text">
+              ${comment}
+            </div>
+          </div>
+          <div class="comment-footer">
+            <div class="likes">
+              <span class="likes-counter">0</span>
+              <button class="like-button"></button>
+            </div>
+          </div>
+        </li>
+      `;
+      
+     
+      commentsListEl.innerHTML += newCommentHTML;
+      
+      
+      formNameEl.value = '';
+      formCommentEl.value = '';
+    });
+
+    
+    formNameEl.addEventListener('input', () => {
+      console.log('Имя изменено:', formNameEl.value);
+    });
+    
+    formCommentEl.addEventListener('input', () => {
+      console.log('Комментарий изменен:', formCommentEl.value);
+    });
+
+    
+    
+    
     console.log("It works!");
   </script>
 </html>
