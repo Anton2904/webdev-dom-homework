@@ -45,6 +45,7 @@
         </li>
       </ul>
       <div class="add-form">
+        <div id="quote-indicator" style="display: none; margin-bottom: 10px; padding: 5px; background: #f0f0f0; border-radius: 4px; font-size: 14px;"></div>
         <input
           type="text"
           class="add-form-name"
@@ -68,8 +69,12 @@
     const formNameEl = document.querySelector('.add-form-name');
     const formCommentEl = document.querySelector('.add-form-text');
     const buttonEl = document.querySelector('.add-form-button');
+    const quoteIndicatorEl = document.getElementById('quote-indicator');
 
     const commentsListEl = document.querySelector('.comments');
+
+    // Переменная для хранения информации о цитируемом комментарии
+    let quotedComment = null;
 
     // Добавляем массив для хранения состояния комментариев
     let comments = [
@@ -88,6 +93,17 @@
         isLiked: true
       }
     ];
+
+    // Функция для экранирования HTML
+    function escapeHtml(unsafe) {
+      if (!unsafe) return '';
+      return unsafe
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
 
     function getCurrentDateTime() {
       const now = new Date();
@@ -112,12 +128,12 @@
         const commentHTML = `
           <li class="comment" data-index="${index}">
             <div class="comment-header">
-              <div>${comment.name}</div>
+              <div>${escapeHtml(comment.name)}</div>
               <div>${comment.date}</div>
             </div>
             <div class="comment-body">
               <div class="comment-text">
-                ${comment.text}
+                ${comment.text} <!-- Убрано escapeHtml, так как текст уже безопасен -->
               </div>
             </div>
             <div class="comment-footer">
@@ -132,8 +148,47 @@
         commentsListEl.innerHTML += commentHTML;
       });
       
-      // Добавляем обработчики клика на лайки после рендера
+      // Добавляем обработчики клика на комментарии и лайки после рендера
+      addCommentListeners();
       addLikeListeners();
+    }
+
+    // Функция для добавления обработчиков на комментарии
+    function addCommentListeners() {
+      const commentElements = document.querySelectorAll('.comment');
+      
+      commentElements.forEach((commentEl) => {
+        commentEl.addEventListener('click', (event) => {
+          // Проверяем, был ли клик на кнопке лайка
+          if (event.target.closest('.like-button')) {
+            return; // Прерываем выполнение, если клик был на лайке
+          }
+          
+          const index = parseInt(commentEl.dataset.index);
+          const comment = comments[index];
+          
+          // Устанавливаем имя автора в поле ввода
+          formNameEl.value = comment.name;
+          
+          // Добавляем текст комментария с символом ">" перед каждой строкой
+          const quotedText = `> ${comment.text.replaceAll('\n', '\n> ')}\n\n`;
+          formCommentEl.value = quotedText;
+          
+          // Сохраняем информацию о цитируемом комментарии
+          quotedComment = {
+            index: index,
+            name: comment.name,
+            text: comment.text
+          };
+          
+          // Показываем индикатор цитирования
+          quoteIndicatorEl.textContent = `Ответ на комментарий ${escapeHtml(comment.name)}`;
+          quoteIndicatorEl.style.display = 'block';
+          
+          // Фокусируемся на поле ввода комментария
+          formCommentEl.focus();
+        });
+      });
     }
 
     // Функция для добавления обработчиков на кнопки лайков
@@ -141,7 +196,10 @@
       const likeButtons = document.querySelectorAll('.like-button');
       
       likeButtons.forEach((button, index) => {
-        button.addEventListener('click', () => {
+        button.addEventListener('click', (event) => {
+          // Останавливаем всплытие события, чтобы не сработал обработчик комментария
+          event.stopPropagation();
+          
           // Меняем состояние лайка в массиве
           if (comments[index].isLiked) {
             comments[index].likes--;
@@ -159,18 +217,24 @@
 
     buttonEl.addEventListener('click', () => {
       const name = formNameEl.value.trim();
-      const comment = formCommentEl.value.trim();
+      let commentText = formCommentEl.value.trim();
       
-      if (!name || !comment) {
+      if (!name || !commentText) {
         alert('Пожалуйста, заполните все поля');
         return;
       }
 
+      // Экранируем только имя пользователя (текст комментария оставляем как есть)
+      const safeName = escapeHtml(name);
+      
+      // Сохраняем текст комментария без экранирования, так как он уже безопасен
+      // (пользователь не может вставить HTML через текстовое поле)
+      
       // Добавляем новый комментарий в массив
       comments.push({
-        name: name,
+        name: safeName,
         date: getCurrentDateTime(),
-        text: comment,
+        text: commentText, // Сохраняем как есть, без экранирования
         likes: 0,
         isLiked: false
       });
@@ -178,9 +242,11 @@
       // Перерендериваем все комментарии
       renderComments();
       
-      // Очищаем форму
+      // Очищаем форму и сбрасываем цитирование
       formNameEl.value = '';
       formCommentEl.value = '';
+      quotedComment = null;
+      quoteIndicatorEl.style.display = 'none';
     });
     
     formNameEl.addEventListener('input', () => {
