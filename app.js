@@ -48,7 +48,6 @@ function renderComments(comments) {
     // Добавляем обработчики для лайков
     document.querySelectorAll('.like-button').forEach(button => {
         button.addEventListener('click', () => {
-            // Логика для лайков (если нужно сохранять на сервере, потребуется дополнительный endpoint)
             const counter = button.previousElementSibling;
             const isActive = button.classList.contains('-active-like');
             
@@ -63,61 +62,63 @@ function renderComments(comments) {
     });
 }
 
+// Функция для получения списка комментариев
+function getCommentsList() {
+    return fetch(`${API_URL}/${PERSONAL_KEY}/comments`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Ошибка при загрузке комментариев');
+            }
+            return response.json();
+        })
+        .then(data => {
+            return data.comments;
+        });
+}
+
 // Функция для загрузки комментариев
-async function fetchComments() {
-    try {
-        const response = await fetch(`${API_URL}/${PERSONAL_KEY}/comments`);
-        
-        if (!response.ok) {
-            throw new Error('Ошибка при загрузке комментариев');
-        }
-        
-        const data = await response.json();
-        return data.comments;
-    } catch (error) {
-        console.error('Ошибка:', error);
-        alert('Не удалось загрузить комментарии');
-        return [];
-    }
+function fetchComments() {
+    return getCommentsList()
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Не удалось загрузить комментарии');
+            return [];
+        });
 }
 
 // Функция для добавления нового комментария
-async function addComment(name, text) {
-    try {
-        const response = await fetch(`${API_URL}/${PERSONAL_KEY}/comments`, {
-            method: 'POST',
-            // Убрали заголовок Content-Type
-            body: JSON.stringify({
-                name: name,
-                text: text
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (!response.ok) {
-            if (response.status === 400) {
-                throw new Error(data.error || 'Ошибка валидации');
-            } else {
-                throw new Error('Ошибка сервера');
+function addComment(name, text) {
+    return fetch(`${API_URL}/${PERSONAL_KEY}/comments`, {
+        method: 'POST',
+        body: JSON.stringify({
+            name: name,
+            text: text
+        })
+    })
+    .then(response => {
+        return response.json().then(data => {
+            if (!response.ok) {
+                if (response.status === 400) {
+                    throw new Error(data.error || 'Ошибка валидации');
+                } else {
+                    throw new Error('Ошибка сервера');
+                }
             }
-        }
-        
-        return data;
-    } catch (error) {
-        console.error('Ошибка:', error);
-        throw error;
-    }
+            return data;
+        });
+    });
 }
 
 // Функция для обновления комментариев
-async function refreshComments() {
-    const comments = await fetchComments();
-    renderComments(comments);
+function refreshComments() {
+    return fetchComments().then(comments => {
+        renderComments(comments);
+        return comments;
+    });
 }
 
 // Обработчик отправки формы
-addForm.addEventListener('submit', async (event) => {
+addForm.addEventListener('submit', (event) => {
     event.preventDefault();
     
     const name = nameInput.value.trim();
@@ -143,32 +144,31 @@ addForm.addEventListener('submit', async (event) => {
     submitButton.disabled = true;
     submitButton.textContent = 'Отправка...';
     
-    try {
-        await addComment(name, text);
-        
-        // Очищаем форму
-        nameInput.value = '';
-        textInput.value = '';
-        
-        // Обновляем список комментариев
-        await refreshComments();
-        
-    } catch (error) {
-        alert(`Ошибка при добавлении комментария: ${error.message}`);
-    } finally {
-        // Разблокируем кнопку
-        submitButton.disabled = false;
-        submitButton.textContent = 'Написать';
-    }
+    addComment(name, text)
+        .then(() => {
+            // Очищаем форму
+            nameInput.value = '';
+            textInput.value = '';
+            
+            // Обновляем список комментариев
+            return refreshComments();
+        })
+        .catch(error => {
+            alert(`Ошибка при добавлении комментария: ${error.message}`);
+        })
+        .finally(() => {
+            // Разблокируем кнопку
+            submitButton.disabled = false;
+            submitButton.textContent = 'Написать';
+        });
 });
 
 // Инициализация приложения
-async function initApp() {
-    try {
-        await refreshComments();
-    } catch (error) {
-        console.error('Ошибка инициализации:', error);
-    }
+function initApp() {
+    return refreshComments()
+        .catch(error => {
+            console.error('Ошибка инициализации:', error);
+        });
 }
 
 // Запускаем приложение
