@@ -8,6 +8,17 @@ const addForm = document.querySelector('.add-form');
 const nameInput = document.querySelector('.add-form-name');
 const textInput = document.querySelector('.add-form-text');
 const submitButton = document.querySelector('.add-form-button');
+const quoteIndicator = document.getElementById('quote-indicator');
+
+// Функция для экранирования HTML
+function escapeHtml(unsafe) {
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
 
 // Функция для форматирования даты
 function formatDate(dateString) {
@@ -21,17 +32,53 @@ function formatDate(dateString) {
     return `${day}.${month}.${year} ${hours}:${minutes}`;
 }
 
+// Функция для показа/скрытия загрузки
+function toggleLoading(show) {
+    if (show) {
+        commentsList.innerHTML = '<div class="loading">Комментарии загружаются...</div>';
+    }
+}
+
+// Функция для показа/скрытия индикатора добавления
+function toggleAddingIndicator(show, text = '') {
+    if (show) {
+        quoteIndicator.style.display = 'block';
+        quoteIndicator.textContent = text;
+    } else {
+        quoteIndicator.style.display = 'none';
+        quoteIndicator.textContent = '';
+    }
+}
+
+// Функция для блокировки/разблокировки формы
+function toggleFormDisabled(disabled) {
+    nameInput.disabled = disabled;
+    textInput.disabled = disabled;
+    submitButton.disabled = disabled;
+    
+    if (disabled) {
+        submitButton.textContent = 'Комментарий добавляется...';
+    } else {
+        submitButton.textContent = 'Написать';
+    }
+}
+
 // Функция для рендеринга комментариев
 function renderComments(comments) {
+    if (comments.length === 0) {
+        commentsList.innerHTML = '<div class="no-comments">Пока нет комментариев</div>';
+        return;
+    }
+    
     const commentsHTML = comments.map(comment => `
         <li class="comment">
             <div class="comment-header">
-                <div>${comment.author.name}</div>
+                <div>${escapeHtml(comment.author.name)}</div>
                 <div>${formatDate(comment.date)}</div>
             </div>
             <div class="comment-body">
                 <div class="comment-text">
-                    ${comment.text}
+                    ${escapeHtml(comment.text)}
                 </div>
             </div>
             <div class="comment-footer">
@@ -78,21 +125,27 @@ function getCommentsList() {
 
 // Функция для загрузки комментариев
 function fetchComments() {
+    toggleLoading(true);
+    
     return getCommentsList()
         .catch(error => {
             console.error('Ошибка:', error);
-            alert('Не удалось загрузить комментарии');
+            commentsList.innerHTML = '<div class="error">Не удалось загрузить комментарии</div>';
             return [];
         });
 }
 
 // Функция для добавления нового комментария
 function addComment(name, text) {
+    // Экранируем ввод пользователя перед отправкой
+    const safeName = escapeHtml(name);
+    const safeText = escapeHtml(text);
+    
     return fetch(`${API_URL}/${PERSONAL_KEY}/comments`, {
         method: 'POST',
         body: JSON.stringify({
-            name: name,
-            text: text
+            name: safeName,
+            text: safeText
         })
     })
     .then(response => {
@@ -140,9 +193,9 @@ addForm.addEventListener('submit', (event) => {
         return;
     }
     
-    // Блокируем кнопку во время отправки
-    submitButton.disabled = true;
-    submitButton.textContent = 'Отправка...';
+    // Показываем индикатор и блокируем форму
+    toggleAddingIndicator(true, 'Комментарий добавляется...');
+    toggleFormDisabled(true);
     
     addComment(name, text)
         .then(() => {
@@ -157,9 +210,9 @@ addForm.addEventListener('submit', (event) => {
             alert(`Ошибка при добавлении комментария: ${error.message}`);
         })
         .finally(() => {
-            // Разблокируем кнопку
-            submitButton.disabled = false;
-            submitButton.textContent = 'Написать';
+            // Скрываем индикатор и разблокируем форму
+            toggleAddingIndicator(false);
+            toggleFormDisabled(false);
         });
 });
 
