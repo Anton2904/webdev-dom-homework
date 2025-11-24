@@ -1,6 +1,6 @@
 // Конфигурация API
 const API_URL = 'https://wedev-api.sky.pro/api/v1';
-const PERSONAL_KEY = 'Антон Манякин';
+const PERSONAL_KEY = 'Антон Манякин'; 
 
 // Элементы DOM
 const commentsList = document.querySelector('.comments');
@@ -151,15 +151,12 @@ function refreshComments() {
 
 // Функция для добавления нового комментария
 function addComment(name, text) {
-    // Экранируем ввод пользователя перед отправкой
-    const safeName = escapeHtml(name);
-    const safeText = escapeHtml(text);
-    
+    // УБРАЛИ экранирование при отправке - отправляем оригинальный текст
     return fetch(`${API_URL}/${PERSONAL_KEY}/comments`, {
         method: 'POST',
         body: JSON.stringify({
-            name: safeName,
-            text: safeText
+            name: name,  // отправляем оригинальное имя
+            text: text   // отправляем оригинальный текст
         })
     })
     .then(response => {
