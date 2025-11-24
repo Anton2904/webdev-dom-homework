@@ -1,6 +1,6 @@
 // Конфигурация API
 const API_URL = 'https://wedev-api.sky.pro/api/v1';
-const PERSONAL_KEY = 'ваше-имя-фамилия'; // Замените на ваше имя и фамилию
+const PERSONAL_KEY = 'Антон Манякин';
 
 // Элементы DOM
 const commentsList = document.querySelector('.comments');
@@ -123,14 +123,28 @@ function getCommentsList() {
         });
 }
 
-// Функция для загрузки комментариев
-function fetchComments() {
+// Функция для загрузки комментариев (только для первой загрузки)
+function fetchInitialComments() {
     toggleLoading(true);
     
     return getCommentsList()
         .catch(error => {
             console.error('Ошибка:', error);
             commentsList.innerHTML = '<div class="error">Не удалось загрузить комментарии</div>';
+            return [];
+        });
+}
+
+// Функция для обновления комментариев (без показа загрузки)
+function refreshComments() {
+    return getCommentsList()
+        .then(comments => {
+            renderComments(comments);
+            return comments;
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            commentsList.innerHTML = '<div class="error">Не удалось обновить комментарии</div>';
             return [];
         });
 }
@@ -159,14 +173,6 @@ function addComment(name, text) {
             }
             return data;
         });
-    });
-}
-
-// Функция для обновления комментариев
-function refreshComments() {
-    return fetchComments().then(comments => {
-        renderComments(comments);
-        return comments;
     });
 }
 
@@ -203,7 +209,7 @@ addForm.addEventListener('submit', (event) => {
             nameInput.value = '';
             textInput.value = '';
             
-            // Обновляем список комментариев
+            // Обновляем список комментариев без показа загрузки
             return refreshComments();
         })
         .catch(error => {
@@ -218,7 +224,11 @@ addForm.addEventListener('submit', (event) => {
 
 // Инициализация приложения
 function initApp() {
-    return refreshComments()
+    return fetchInitialComments()
+        .then(comments => {
+            renderComments(comments);
+            return comments;
+        })
         .catch(error => {
             console.error('Ошибка инициализации:', error);
         });
