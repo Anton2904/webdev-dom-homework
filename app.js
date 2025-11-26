@@ -10,6 +10,12 @@ const textInput = document.querySelector('.add-form-text');
 const submitButton = document.querySelector('.add-form-button');
 const quoteIndicator = document.getElementById('quote-indicator');
 
+// Переменные для хранения данных формы
+let currentFormData = {
+    name: '',
+    text: ''
+};
+
 // Функция для экранирования HTML
 function escapeHtml(unsafe) {
     return unsafe
@@ -57,10 +63,24 @@ function toggleFormDisabled(disabled) {
     submitButton.disabled = disabled;
     
     if (disabled) {
-        submitButton.textContent = 'Комментарий добавляется...';
+        submitButton.textContent = 'Добавляется...';
     } else {
         submitButton.textContent = 'Написать';
     }
+}
+
+// Функция для сохранения данных формы
+function saveFormData() {
+    currentFormData = {
+        name: nameInput.value,
+        text: textInput.value
+    };
+}
+
+// Функция для восстановления данных формы
+function restoreFormData() {
+    nameInput.value = currentFormData.name;
+    textInput.value = currentFormData.text;
 }
 
 // Функция для рендеринга комментариев
@@ -109,17 +129,28 @@ function renderComments(comments) {
     });
 }
 
-// Функция для получения списка комментариев
+// Улучшенная функция для получения списка комментариев с обработкой ошибок
 function getCommentsList() {
     return fetch(`${API_URL}/${PERSONAL_KEY}/comments`)
         .then(response => {
             if (!response.ok) {
-                throw new Error('Ошибка при загрузке комментариев');
+                if (response.status >= 500) {
+                    throw new Error('Серверная ошибка. Пожалуйста, попробуйте позже.');
+                } else {
+                    throw new Error('Ошибка при загрузке комментариев');
+                }
             }
             return response.json();
         })
         .then(data => {
             return data.comments;
+        })
+        .catch(error => {
+            // Проверяем, является ли ошибка сетевой
+            if (error.message === 'Failed to fetch') {
+                throw new Error('Проблемы с интернет-соединением. Проверьте подключение к сети.');
+            }
+            throw error;
         });
 }
 
@@ -130,7 +161,7 @@ function fetchInitialComments() {
     return getCommentsList()
         .catch(error => {
             console.error('Ошибка:', error);
-            commentsList.innerHTML = '<div class="error">Не удалось загрузить комментарии</div>';
+            commentsList.innerHTML = `<div class="error">${error.message}</div>`;
             return [];
         });
 }
@@ -144,32 +175,41 @@ function refreshComments() {
         })
         .catch(error => {
             console.error('Ошибка:', error);
-            commentsList.innerHTML = '<div class="error">Не удалось обновить комментарии</div>';
+            commentsList.innerHTML = `<div class="error">${error.message}</div>`;
             return [];
         });
 }
 
-// Функция для добавления нового комментария
-function addComment(name, text) {
-    // УБРАЛИ экранирование при отправке - отправляем оригинальный текст
+// Улучшенная функция для добавления нового комментария с обработкой ошибок
+function addComment(name, text, forceError = false) {
     return fetch(`${API_URL}/${PERSONAL_KEY}/comments`, {
         method: 'POST',
         body: JSON.stringify({
-            name: name,  // отправляем оригинальное имя
-            text: text   // отправляем оригинальный текст
+            name: name,
+            text: text,
+            forceError: forceError // Добавляем параметр для тестирования ошибок
         })
     })
     .then(response => {
         return response.json().then(data => {
             if (!response.ok) {
                 if (response.status === 400) {
-                    throw new Error(data.error || 'Ошибка валидации');
+                    throw new Error(data.error || 'Ошибка валидации: проверьте введенные данные');
+                } else if (response.status >= 500) {
+                    throw new Error('Серверная ошибка. Пожалуйста, попробуйте позже.');
                 } else {
                     throw new Error('Ошибка сервера');
                 }
             }
             return data;
         });
+    })
+    .catch(error => {
+        // Проверяем, является ли ошибка сетевой
+        if (error.message === 'Failed to fetch') {
+            throw new Error('Проблемы с интернет-соединением. Проверьте подключение к сети.');
+        }
+        throw error;
     });
 }
 
@@ -196,20 +236,29 @@ addForm.addEventListener('submit', (event) => {
         return;
     }
     
+    // Сохраняем данные формы перед отправкой
+    saveFormData();
+    
     // Показываем индикатор и блокируем форму
     toggleAddingIndicator(true, 'Комментарий добавляется...');
     toggleFormDisabled(true);
     
-    addComment(name, text)
+    // Для тестирования: в 50% случаев добавляем forceError: true
+    const forceError = Math.random() > 0.5;
+    
+    addComment(name, text, forceError)
         .then(() => {
-            // Очищаем форму
+            // Очищаем форму только при успешной отправке
             nameInput.value = '';
             textInput.value = '';
+            currentFormData = { name: '', text: '' };
             
             // Обновляем список комментариев без показа загрузки
             return refreshComments();
         })
         .catch(error => {
+            // Восстанавливаем данные формы при ошибке
+            restoreFormData();
             alert(`Ошибка при добавлении комментария: ${error.message}`);
         })
         .finally(() => {
@@ -218,6 +267,10 @@ addForm.addEventListener('submit', (event) => {
             toggleFormDisabled(false);
         });
 });
+
+// Обработчики для сохранения данных формы при вводе
+nameInput.addEventListener('input', saveFormData);
+textInput.addEventListener('input', saveFormData);
 
 // Инициализация приложения
 function initApp() {
