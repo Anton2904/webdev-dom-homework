@@ -3,43 +3,119 @@
     <head>
         <title>Проект "Комменты"</title>
         <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="styles.css" />
     </head>
 
     <body>
-        <div class="container">
+        <!-- Форма авторизации -->
+        <div class="auth-container" id="auth-container" style="margin: 20px auto; max-width: 600px; padding: 20px; background: #f5f5f5; border-radius: 8px;">
+            <div class="auth-form">
+                <h3 style="margin-top: 0; text-align: center;">Авторизация</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <input 
+                        type="text" 
+                        id="login-input" 
+                        placeholder="Логин" 
+                        style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;"
+                    >
+                    <input 
+                        type="password" 
+                        id="password-input" 
+                        placeholder="Пароль" 
+                        style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;"
+                    >
+                    <div style="display: flex; gap: 10px; justify-content: center;">
+                        <button 
+                            id="login-button" 
+                            style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; transition: all 0.3s ease;"
+                            onmouseover="this.style.opacity='0.9'"
+                            onmouseout="this.style.opacity='1'"
+                        >Войти</button>
+                        <button 
+                            id="register-button" 
+                            style="padding: 10px 20px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; transition: all 0.3s ease;"
+                            onmouseover="this.style.opacity='0.9'"
+                            onmouseout="this.style.opacity='1'"
+                        >Регистрация</button>
+                    </div>
+                </div>
+                <div id="auth-status" style="margin-top: 15px; text-align: center; font-size: 14px; min-height: 20px; transition: all 0.3s ease;"></div>
+                <p style="text-align: center; font-size: 12px; color: #666; margin-top: 20px;">
+                    Для тестирования можете использовать:<br>
+                    Логин: user1, Пароль: password (или зарегистрируйтесь)
+                </p>
+            </div>
+        </div>
+
+        <!-- Основной контейнер с комментариями -->
+        <div class="container" id="main-container" style="display: none; margin: 0 auto; max-width: 600px;">
+            <div style="margin-bottom: 20px; padding: 15px; background: #f0f0f0; border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span id="user-info" style="font-weight: bold; color: #333;"></span>
+                    <button 
+                        id="logout-button" 
+                        style="padding: 5px 15px; background: #ff4444; color: white; border: none; border-radius: 4px; cursor: pointer; transition: all 0.3s ease;"
+                        onmouseover="this.style.opacity='0.9'"
+                        onmouseout="this.style.opacity='1'"
+                    >Выйти</button>
+                </div>
+            </div>
+            
             <ul class="comments">
                 <!-- Комментарии будут загружаться динамически -->
             </ul>
+            
             <form class="add-form">
                 <div
                     id="quote-indicator"
                     style="
                         display: none;
                         margin-bottom: 10px;
-                        padding: 5px;
+                        padding: 10px;
                         background: #f0f0f0;
                         border-radius: 4px;
                         font-size: 14px;
                     "
                 ></div>
-                <input
-                    type="text"
-                    class="add-form-name"
-                    placeholder="Введите ваше имя"
-                    required
-                    minlength="3"
-                />
                 <textarea
                     class="add-form-text"
                     placeholder="Введите ваш комментарий"
                     rows="4"
                     required
                     minlength="3"
+                    style="
+                        width: 100%;
+                        padding: 10px;
+                        border: 1px solid #ddd;
+                        border-radius: 4px;
+                        font-size: 16px;
+                        box-sizing: border-box;
+                        margin-bottom: 10px;
+                        transition: all 0.3s ease;
+                    "
                 ></textarea>
                 <div class="add-form-row">
-                    <button type="submit" class="add-form-button">Написать</button>
+                    <button 
+                        type="submit" 
+                        class="add-form-button"
+                        style="
+                            padding: 10px 30px;
+                            background: #4CAF50;
+                            color: white;
+                            border: none;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 16px;
+                            transition: all 0.3s ease;
+                        "
+                        onmouseover="this.style.opacity='0.9'"
+                        onmouseout="this.style.opacity='1'"
+                    >Написать</button>
                 </div>
+                <p style="text-align: center; font-size: 12px; color: #666; margin-top: 10px;">
+                    Подсказка: Ctrl+Enter для быстрой отправки
+                </p>
             </form>
         </div>
         
