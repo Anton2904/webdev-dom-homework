@@ -1,19 +1,64 @@
+/* Базовые */
+* { box-sizing: border-box; }
 body {
     margin: 0;
     font-family: Helvetica, Arial, sans-serif;
+    background: linear-gradient(180deg, #111 0%, #151515 100%);
+    color: #fff;
 }
 
+/* Контейнер */
 .container {
-    color: #ffffff;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-top: 80px;
-    padding-bottom: 200px;
-    background: #202020;
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 24px;
     min-height: 100vh;
 }
 
+/* Топбар */
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+.brand {
+    font-size: 28px;
+    font-weight: 700;
+    color: #bcec30;
+    text-shadow: 0 2px 8px rgba(188,236,48,0.08);
+}
+.top-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.user-info {
+    color: #ddd;
+    font-weight: 600;
+}
+.top-button {
+    padding: 8px 14px;
+    border-radius: 12px;
+    border: none;
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+    cursor: pointer;
+    transition: all .2s;
+}
+.top-button:hover { transform: translateY(-1px); opacity: 0.95; }
+.top-button.danger {
+    background: linear-gradient(180deg,#ff6b6b,#ff4444);
+}
+
+/* Контент */
+.content-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* Список комментариев и карточки */
 .comments,
 .comment {
     margin: 0;
@@ -23,294 +68,155 @@ body {
 
 .comment,
 .add-form {
-    width: 596px;
-    box-sizing: border-box;
-    background: radial-gradient(
-      75.42% 75.42% at 50% 42.37%,
-      rgba(53, 53, 53, 0) 22.92%,
-      #7334ea 100%
-    );
-    filter: drop-shadow(0px 20px 67px rgba(0, 0, 0, 0.08));
-    border-radius: 20px;
+    width: 100%;
+    background: radial-gradient(75% 75% at 50% 42%, rgba(53,53,53,0) 20%, #7334ea 100%);
+    border-radius: 16px;
+    filter: drop-shadow(0px 20px 60px rgba(0,0,0,0.5));
+    color: #fff;
 }
 
-.comments {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-}
+.comments { display: flex; flex-direction: column; gap: 18px; }
 
 .comment {
-    padding: 48px;
+    padding: 24px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    position: relative;
 }
 
-.comment-header {
-    font-size: 16px;
-    display: flex;
-    justify-content: space-between;
-}
+.comment-header { display:flex; justify-content:space-between; font-size:14px; color:#dcdcdc; }
+.author { font-weight:700; color:#fff; }
+.date { opacity:0.8; font-size:13px; }
 
+.comment-body { margin-top:12px; margin-bottom:12px; }
+.comment-text { font-size:18px; line-height:1.4; color:#fff; }
+
+/* Лайки: цифра + сердечко справа снизу */
 .comment-footer {
-    display: flex;
-    justify-content: flex-end;
+    position: relative;
+    min-height: 40px;
 }
-
-.comment-body {
-    margin-top: 32px;
-    margin-bottom: 32px;
-}
-
-.comment-text {
-    font-size: 32px;
-}
-
 .likes {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
     display: flex;
     align-items: center;
+    gap: 6px;
 }
-
-.like-button {
-    all: unset;
-    cursor: pointer;
-}
-
 .likes-counter {
-    font-size: 26px;
-    margin-right: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #bcec30;
 }
-
+/* Кнопка лайка как SVG */
 .like-button {
-    margin-left: 10px;
-    background-image: url("data:image/svg+xml,%3Csvg width='22' height='20' viewBox='0 0 22 20' fill='none' xmlns='http://www.w3.org/2000/svg' %3E%3Cpath d='M11.11 16.9482L11 17.0572L10.879 16.9482C5.654 12.2507 2.2 9.14441 2.2 5.99455C2.2 3.81471 3.85 2.17984 6.05 2.17984C7.744 2.17984 9.394 3.26975 9.977 4.75204H12.023C12.606 3.26975 14.256 2.17984 15.95 2.17984C18.15 2.17984 19.8 3.81471 19.8 5.99455C19.8 9.14441 16.346 12.2507 11.11 16.9482ZM15.95 0C14.036 0 12.199 0.882834 11 2.26703C9.801 0.882834 7.964 0 6.05 0C2.662 0 0 2.6267 0 5.99455C0 10.1035 3.74 13.4714 9.405 18.5613L11 20L12.595 18.5613C18.26 13.4714 22 10.1035 22 5.99455C22 2.6267 19.338 0 15.95 0Z' fill='%23BCEC30' /%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    width: 22px;
-    height: 22px;
-}
-
-.-active-like {
-    background-image: url("data:image/svg+xml,%3Csvg width='22' height='20' viewBox='0 0 22 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M15.95 0C14.036 0 12.199 0.882834 11 2.26703C9.801 0.882834 7.964 0 6.05 0C2.662 0 0 2.6267 0 5.99455C0 10.1035 3.74 13.4714 9.405 18.5613L11 20L12.595 18.5613C18.26 13.4714 22 10.1035 22 5.99455C22 2.6267 19.338 0 15.95 0Z' fill='%23BCEC30'/%3E%3C/svg%3E");
-}
-
-.add-form {
-    padding: 20px;
-    margin-top: 48px;
-    display: flex;
-    flex-direction: column;
-}
-
-.add-form-name,
-.add-form-text {
-    font-size: 16px;
-    font-family: Helvetica, Arial, sans-serif;
-    border-radius: 8px;
+    background: none;
     border: none;
-    transition: all 0.3s ease;
-}
-
-.add-form-name:focus,
-.add-form-text:focus {
-    outline: none;
-    border-color: #bcec30 !important;
-    box-shadow: 0 0 0 2px rgba(188, 236, 48, 0.2);
-}
-
-.add-form-name {
-    width: 300px;
-    padding: 11px 22px;
-}
-
-.add-form-text {
-    margin-top: 12px;
-    padding: 22px;
-    resize: none;
-}
-
-.add-form-row {
-    display: flex;
-    justify-content: flex-end;
-}
-
-.add-form-button {
-    margin-top: 24px;
-    font-size: 24px;
-    padding: 10px 20px;
-    background-color: #bcec30;
-    border: none;
-    border-radius: 18px;
+    padding: 0;
     cursor: pointer;
-    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.like-button svg {
+    width: 24px;
+    height: 24px;
+    fill: none;
+    stroke: #fff;
+    stroke-width: 2;
+    transition: fill 0.3s, stroke 0.3s, transform 0.2s;
+}
+.like-button:hover svg {
+    transform: scale(1.2);
+}
+.like-button.-active-like svg {
+    fill: #bcec30;
+    stroke: #bcec30;
 }
 
-.add-form-button:hover {
-    opacity: 0.9;
+/* Форма добавления */
+.add-form { padding: 18px; display:flex; flex-direction:column; gap:12px; }
+.add-form-text { width:100%; padding:16px; border-radius:10px; border:none; resize:none; font-size:16px; }
+.add-form-button {
+    align-self:flex-end;
+    padding:10px 20px;
+    border-radius:12px;
+    border:none;
+    font-size:16px;
+    background: linear-gradient(180deg,#bcec30,#89c700);
+    cursor: pointer;
 }
+.add-form-button:disabled { background: #ccc; cursor: not-allowed; }
 
-.loading, .no-comments, .error {
-    text-align: center;
-    padding: 20px;
-    color: #666;
-    font-style: italic;
-}
-
-.error {
-    color: #d32f2f;
-}
-
-.add-form input:disabled,
-.add-form textarea:disabled {
-    background-color: #f5f5f5;
-    cursor: not-allowed;
-}
-
-.add-form-button:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-}
-
-.loading, .no-comments, .error {
-    text-align: center;
-    padding: 48px;
-    font-size: 18px;
-    width: 596px;
-    box-sizing: border-box;
-    background: radial-gradient(
-      75.42% 75.42% at 50% 42.37%,
-      rgba(53, 53, 53, 0) 22.92%,
-      #7334ea 100%
-    );
-    filter: drop-shadow(0px 20px 67px rgba(0, 0, 0, 0.08));
-    border-radius: 20px;
-}
-
-.loading {
-    color: #bcec30;
-}
-
-.no-comments {
-    color: #ffffff;
-    font-style: italic;
-}
-
-.error {
-    color: #ff6b6b;
-    background: radial-gradient(
-      75.42% 75.42% at 50% 42.37%,
-      rgba(53, 53, 53, 0) 22.92%,
-      #ea3434 100%
-    );
-}
-
-.add-form input:disabled,
-.add-form textarea:disabled {
-    background-color: #e0e0e0;
-    color: #999;
-    cursor: not-allowed;
-}
-
-.add-form-button:disabled {
-    background-color: #cccccc;
-    color: #666;
-    cursor: not-allowed;
-}
-
-.add-form-button:disabled:hover {
-    opacity: 1;
-}
-
-#quote-indicator {
-    color: #bcec30;
-    background: rgba(188, 236, 48, 0.1);
-    border: 1px solid #bcec30;
+/* Блокировка формы для неавторизованных */
+.add-form-lock {
+    margin-top: 8px;
     padding: 12px;
-    border-radius: 8px;
-    text-align: center;
+    border-radius: 10px;
+    background: rgba(0,0,0,0.35);
+    color: #ddd;
     font-size: 14px;
-    transition: all 0.3s ease;
+    display:flex;
+    justify-content:center;
 }
+.link-button { background: none; border: none; color: #bcec30; cursor: pointer; text-decoration: underline; padding: 0; }
 
-/* Стили для авторизации */
-.auth-container {
-    font-family: Helvetica, Arial, sans-serif;
-    margin: 20px auto;
-    max-width: 600px;
-    padding: 20px;
-    background: #f5f5f5;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-}
-
-#auth-status {
-    transition: all 0.3s ease;
-    margin-top: 15px;
+/* Лоадеры/ошибки */
+.loading, .no-comments, .error {
     text-align: center;
-    font-size: 14px;
-    min-height: 20px;
-}
-
-.auth-form input {
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    padding: 18px;
     font-size: 16px;
-    transition: all 0.3s ease;
+    color: #ddd;
+    width: 100%;
+    border-radius: 12px;
+}
+.loading { color: #bcec30; font-style: italic; }
+.no-comments { color: #ffffff; font-style: italic; }
+.error { color: #ffb3b3; background: rgba(255,0,0,0.06); }
+
+/* Подсказка */
+.hint { text-align:center; font-size:12px; color:#cfcfcf; margin:0; }
+
+/* Модальное окно авторизации */
+.auth-modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.6);
+    z-index: 2000;
+}
+.auth-card {
+    width: 420px;
+    background: radial-gradient(75% 75% at 50% 42%, rgba(53,53,53,0) 20%, #4b2db0 100%);
+    border-radius: 14px;
+    padding: 22px;
+    position: relative;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+    color: #fff;
+}
+.auth-card h3 { margin: 0 0 14px 0; color: #bcec30; }
+.auth-form { display:flex; flex-direction:column; gap:12px; }
+.auth-form input {
+    padding: 12px; border-radius:10px; border:none; font-size:14px;
+}
+.auth-actions { display:flex; gap:10px; justify-content: center; }
+.primary {
+    background: linear-gradient(180deg,#bcec30,#89c700);
+    padding:10px 16px; border-radius:10px; border:none; cursor:pointer;
+}
+.secondary {
+    background: rgba(255,255,255,0.06); padding:10px 16px; border-radius:10px; border:none; cursor:pointer;
+}
+.auth-status { text-align:center; font-size:13px; color:#ddd; margin-top:6px; }
+.close-auth {
+    position:absolute; top:10px; right:10px; background:transparent; border:none; color:#fff; font-size:16px; cursor:pointer;
 }
 
-.auth-form input:focus {
-    outline: none;
-    border-color: #2196F3;
-    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
-}
-
-/* Адаптивность */
+/* Адаптив */
 @media (max-width: 640px) {
-    .comment, .add-form {
-        width: 90%;
-        margin-left: auto;
-        margin-right: auto;
-    }
-    
-    .container {
-        padding: 20px;
-        padding-top: 40px;
-        padding-bottom: 100px;
-    }
-    
-    .auth-container {
-        width: 90%;
-        margin: 20px auto;
-    }
-    
-    .comment {
-        padding: 20px;
-    }
-    
-    .comment-text {
-        font-size: 24px;
-    }
-    
-    .loading, .no-comments, .error {
-        width: 90%;
-        padding: 30px;
-    }
-}
-
-/* Улучшения для текстовых полей */
-textarea, input {
-    font-family: Helvetica, Arial, sans-serif;
-}
-
-textarea:focus, input:focus {
-    outline: none;
-    border-color: #bcec30 !important;
-    box-shadow: 0 0 0 2px rgba(188, 236, 48, 0.2);
-}
-
-/* Анимации */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.comment {
-    animation: fadeIn 0.3s ease-out;
+    .container { margin: 20px; }
+    .auth-card { width: 92%; padding: 16px; }
+    .comment-text { font-size:16px; }
 }
