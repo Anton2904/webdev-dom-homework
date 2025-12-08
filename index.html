@@ -3,46 +3,76 @@
     <head>
         <title>Проект "Комменты"</title>
         <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="styles.css" />
     </head>
 
     <body>
-        <div class="container">
-            <ul class="comments">
-                <!-- Комментарии будут загружаться динамически -->
-            </ul>
-            <form class="add-form">
-                <div
-                    id="quote-indicator"
-                    style="
-                        display: none;
-                        margin-bottom: 10px;
-                        padding: 5px;
-                        background: #f0f0f0;
-                        border-radius: 4px;
-                        font-size: 14px;
-                    "
-                ></div>
-                <input
-                    type="text"
-                    class="add-form-name"
-                    placeholder="Введите ваше имя"
-                    required
-                    minlength="3"
-                />
-                <textarea
-                    class="add-form-text"
-                    placeholder="Введите ваш комментарий"
-                    rows="4"
-                    required
-                    minlength="3"
-                ></textarea>
-                <div class="add-form-row">
-                    <button type="submit" class="add-form-button">Написать</button>
+        <div class="container" id="main-container">
+            <!-- Top bar -->
+            <div class="topbar">
+                <div class="brand">Комменты</div>
+                <div class="top-actions">
+                    <span id="user-info" class="user-info">Гость</span>
+                    <button id="open-auth-button" class="top-button">Войти</button>
+                    <button id="logout-button" class="top-button danger" style="display:none;">Выйти</button>
                 </div>
-            </form>
+            </div>
+
+            <!-- Контент -->
+            <div class="content-wrap">
+                <ul class="comments">
+                    <!-- Комментарии загружаются динамически -->
+                </ul>
+
+                <form class="add-form" id="add-form">
+                    <div
+                        id="quote-indicator"
+                        style="display: none;"
+                    ></div>
+
+                    <textarea
+                        class="add-form-text"
+                        id="comment-text"
+                        placeholder="Введите ваш комментарий"
+                        rows="4"
+                        required
+                        minlength="3"
+                    ></textarea>
+
+                    <div class="add-form-row">
+                        <button 
+                            type="submit" 
+                            class="add-form-button"
+                            id="submit-comment"
+                        >Написать</button>
+                    </div>
+
+                    <p class="hint">Подсказка: Ctrl+Enter для быстрой отправки</p>
+                    <div id="add-form-lock" class="add-form-lock" style="display:none;">
+                        <div>Чтобы добавить комментарий, пожалуйста, <button id="open-auth-button-2" class="link-button">войдите</button> в систему.</div>
+                    </div>
+                </form>
+            </div>
         </div>
-        
+
+        <!-- Модальное окно авторизации (скрыто по умолчанию) -->
+        <div class="auth-modal" id="auth-modal" aria-hidden="true">
+            <div class="auth-card">
+                <h3>Авторизация</h3>
+                <div class="auth-form">
+                    <input type="text" id="login-input" placeholder="Логин" />
+                    <input type="password" id="password-input" placeholder="Пароль" />
+                    <div class="auth-actions">
+                        <button id="login-button" class="primary">Войти</button>
+                        <button id="register-button" class="secondary">Регистрация</button>
+                    </div>
+                    <div id="auth-status" class="auth-status">Для тестирования: login: admin / password: admin</div>
+                    <button id="close-auth" class="close-auth" title="Закрыть">✕</button>
+                </div>
+            </div>
+        </div>
+
+        <script type="module" src="app.js"></script>
     </body>
-    <script type="module" src="app.js"></script>
 </html>

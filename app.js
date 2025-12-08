@@ -1,288 +1,261 @@
-// Конфигурация API
-const API_URL = 'https://wedev-api.sky.pro/api/v1';
-const PERSONAL_KEY = 'Антон Манякин'; 
+const API_URL = 'https://wedev-api.sky.pro/api/v2';
+const PERSONAL_KEY = 'Антон-Манякин'.replace(/\s+/g, '-');
+const USER_API_URL = 'https://wedev-api.sky.pro/api/user';
 
-// Элементы DOM
+// DOM элементы
 const commentsList = document.querySelector('.comments');
-const addForm = document.querySelector('.add-form');
-const nameInput = document.querySelector('.add-form-name');
-const textInput = document.querySelector('.add-form-text');
-const submitButton = document.querySelector('.add-form-button');
+const addForm = document.getElementById('add-form');
+const textInput = document.getElementById('comment-text');
+const submitButton = document.getElementById('submit-comment');
 const quoteIndicator = document.getElementById('quote-indicator');
+const addFormLock = document.getElementById('add-form-lock');
 
-// Переменные для хранения данных формы
-let currentFormData = {
-    name: '',
-    text: ''
-};
+const authModal = document.getElementById('auth-modal');
+const openAuthButton = document.getElementById('open-auth-button');
+const openAuthButton2 = document.getElementById('open-auth-button-2');
+const closeAuthButton = document.getElementById('close-auth');
+const loginInput = document.getElementById('login-input');
+const passwordInput = document.getElementById('password-input');
+const loginButton = document.getElementById('login-button');
+const registerButton = document.getElementById('register-button');
+const authStatus = document.getElementById('auth-status');
 
-// Функция для экранирования HTML
-function escapeHtml(unsafe) {
-    return unsafe
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+const userInfo = document.getElementById('user-info');
+const logoutButton = document.getElementById('logout-button');
+
+let token = null;
+let currentUser = null;
+let currentFormData = { text: '' };
+
+// --- Утилиты ---
+function escapeHtml(unsafe = '') {
+  return String(unsafe)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
 }
 
-// Функция для форматирования даты
 function formatDate(dateString) {
-    const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear().toString().slice(-2);
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    
-    return `${day}.${month}.${year} ${hours}:${minutes}`;
+  const date = new Date(dateString);
+  return `${String(date.getDate()).padStart(2,'0')}.${String(date.getMonth()+1).padStart(2,'0')}.${String(date.getFullYear()).slice(-2)} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
 }
 
-// Функция для показа/скрытия загрузки
-function toggleLoading(show) {
-    if (show) {
-        commentsList.innerHTML = '<div class="loading">Комментарии загружаются...</div>';
-    }
+function getHeaders() {
+  const headers = {};
+  if(token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
 }
 
-// Функция для показа/скрытия индикатора добавления
+async function readResponse(res) {
+  const text = await res.text();
+  let data = null;
+  try { data = JSON.parse(text); } catch(e){ data = null; }
+  return { ok: res.ok, status: res.status, text, data };
+}
+
 function toggleAddingIndicator(show, text = '') {
-    if (show) {
-        quoteIndicator.style.display = 'block';
-        quoteIndicator.textContent = text;
-    } else {
-        quoteIndicator.style.display = 'none';
-        quoteIndicator.textContent = '';
-    }
+  quoteIndicator.style.display = show ? 'block' : 'none';
+  quoteIndicator.textContent = text;
 }
 
-// Функция для блокировки/разблокировки формы
 function toggleFormDisabled(disabled) {
-    nameInput.disabled = disabled;
-    textInput.disabled = disabled;
-    submitButton.disabled = disabled;
-    
-    if (disabled) {
-        submitButton.textContent = 'Добавляется...';
-    } else {
-        submitButton.textContent = 'Написать';
-    }
+  textInput.disabled = disabled;
+  submitButton.disabled = disabled;
+  submitButton.textContent = disabled ? 'Добавляется...' : 'Написать';
+  submitButton.style.backgroundColor = disabled ? '#cccccc' : '';
 }
 
-// Функция для сохранения данных формы
-function saveFormData() {
-    currentFormData = {
-        name: nameInput.value,
-        text: textInput.value
-    };
-}
+function saveFormData() { currentFormData = { text: textInput.value }; }
+function restoreFormData() { textInput.value = currentFormData.text || ''; }
 
-// Функция для восстановления данных формы
-function restoreFormData() {
-    nameInput.value = currentFormData.name;
-    textInput.value = currentFormData.text;
-}
-
-// Функция для рендеринга комментариев
-function renderComments(comments) {
-    if (comments.length === 0) {
-        commentsList.innerHTML = '<div class="no-comments">Пока нет комментариев</div>';
-        return;
-    }
-    
-    const commentsHTML = comments.map(comment => `
-        <li class="comment">
-            <div class="comment-header">
-                <div>${escapeHtml(comment.author.name)}</div>
-                <div>${formatDate(comment.date)}</div>
-            </div>
-            <div class="comment-body">
-                <div class="comment-text">
-                    ${escapeHtml(comment.text)}
-                </div>
-            </div>
-            <div class="comment-footer">
-                <div class="likes">
-                    <span class="likes-counter">${comment.likes}</span>
-                    <button class="like-button ${comment.isLiked ? '-active-like' : ''}" data-id="${comment.id}"></button>
-                </div>
-            </div>
-        </li>
-    `).join('');
-    
-    commentsList.innerHTML = commentsHTML;
-    
-    // Добавляем обработчики для лайков
-    document.querySelectorAll('.like-button').forEach(button => {
-        button.addEventListener('click', () => {
-            const counter = button.previousElementSibling;
-            const isActive = button.classList.contains('-active-like');
-            
-            if (isActive) {
-                button.classList.remove('-active-like');
-                counter.textContent = parseInt(counter.textContent) - 1;
-            } else {
-                button.classList.add('-active-like');
-                counter.textContent = parseInt(counter.textContent) + 1;
-            }
-        });
+// --- API ---
+function loginUser(login, password) {
+  return fetch(`${USER_API_URL}/login`, { method: 'POST', body: JSON.stringify({login,password}) })
+    .then(readResponse)
+    .then(({ok, data, status})=>{
+      if(!ok) throw new Error(data?.error||`Ошибка входа (${status})`);
+      token = data.user.token;
+      currentUser = data.user;
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(currentUser));
+      return data;
     });
 }
 
-// Улучшенная функция для получения списка комментариев с обработкой ошибок
+function registerUser(name, login, password) {
+  return fetch(`${USER_API_URL}`, { method: 'POST', body: JSON.stringify({name,login,password}) })
+    .then(readResponse)
+    .then(({ok,data,status})=>{
+      if(!ok) throw new Error(data?.error||`Ошибка регистрации (${status})`);
+      token = data.user.token;
+      currentUser = data.user;
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(currentUser));
+      return data;
+    });
+}
+
 function getCommentsList() {
-    return fetch(`${API_URL}/${PERSONAL_KEY}/comments`)
-        .then(response => {
-            if (!response.ok) {
-                if (response.status >= 500) {
-                    throw new Error('Серверная ошибка. Пожалуйста, попробуйте позже.');
-                } else {
-                    throw new Error('Ошибка при загрузке комментариев');
-                }
-            }
-            return response.json();
-        })
-        .then(data => {
-            return data.comments;
-        })
-        .catch(error => {
-            // Проверяем, является ли ошибка сетевой
-            if (error.message === 'Failed to fetch') {
-                throw new Error('Проблемы с интернет-соединением. Проверьте подключение к сети.');
-            }
-            throw error;
-        });
-}
-
-// Функция для загрузки комментариев (только для первой загрузки)
-function fetchInitialComments() {
-    toggleLoading(true);
-    
-    return getCommentsList()
-        .catch(error => {
-            console.error('Ошибка:', error);
-            commentsList.innerHTML = `<div class="error">${error.message}</div>`;
-            return [];
-        });
-}
-
-// Функция для обновления комментариев (без показа загрузки)
-function refreshComments() {
-    return getCommentsList()
-        .then(comments => {
-            renderComments(comments);
-            return comments;
-        })
-        .catch(error => {
-            console.error('Ошибка:', error);
-            commentsList.innerHTML = `<div class="error">${error.message}</div>`;
-            return [];
-        });
-}
-
-// Улучшенная функция для добавления нового комментария с обработкой ошибок
-function addComment(name, text, forceError = false) {
-    return fetch(`${API_URL}/${PERSONAL_KEY}/comments`, {
-        method: 'POST',
-        body: JSON.stringify({
-            name: name,
-            text: text,
-            forceError: forceError // Добавляем параметр для тестирования ошибок
-        })
-    })
-    .then(response => {
-        return response.json().then(data => {
-            if (!response.ok) {
-                if (response.status === 400) {
-                    throw new Error(data.error || 'Ошибка валидации: проверьте введенные данные');
-                } else if (response.status >= 500) {
-                    throw new Error('Серверная ошибка. Пожалуйста, попробуйте позже.');
-                } else {
-                    throw new Error('Ошибка сервера');
-                }
-            }
-            return data;
-        });
-    })
-    .catch(error => {
-        // Проверяем, является ли ошибка сетевой
-        if (error.message === 'Failed to fetch') {
-            throw new Error('Проблемы с интернет-соединением. Проверьте подключение к сети.');
-        }
-        throw error;
+  return fetch(`${API_URL}/${PERSONAL_KEY}/comments`, { method:'GET', headers: getHeaders() })
+    .then(readResponse)
+    .then(({ok, data, status})=>{
+      if(!ok) throw new Error(data?.error || `Ошибка загрузки комментариев (${status})`);
+      return data.comments || [];
     });
 }
 
-// Обработчик отправки формы
-addForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-    
-    const name = nameInput.value.trim();
-    const text = textInput.value.trim();
-    
-    // Валидация
-    if (!name || !text) {
-        alert('Пожалуйста, заполните все поля');
-        return;
-    }
-    
-    if (name.length < 3) {
-        alert('Имя должно содержать хотя бы 3 символа');
-        return;
-    }
-    
-    if (text.length < 3) {
-        alert('Текст комментария должен содержать хотя бы 3 символа');
-        return;
-    }
-    
-    // Сохраняем данные формы перед отправкой
-    saveFormData();
-    
-    // Показываем индикатор и блокируем форму
-    toggleAddingIndicator(true, 'Комментарий добавляется...');
-    toggleFormDisabled(true);
-    
-    // Для тестирования: в 50% случаев добавляем forceError: true
-    const forceError = Math.random() > 0.5;
-    
-    addComment(name, text, forceError)
-        .then(() => {
-            // Очищаем форму только при успешной отправке
-            nameInput.value = '';
-            textInput.value = '';
-            currentFormData = { name: '', text: '' };
-            
-            // Обновляем список комментариев без показа загрузки
-            return refreshComments();
-        })
-        .catch(error => {
-            // Восстанавливаем данные формы при ошибке
-            restoreFormData();
-            alert(`Ошибка при добавлении комментария: ${error.message}`);
-        })
-        .finally(() => {
-            // Скрываем индикатор и разблокируем форму
-            toggleAddingIndicator(false);
-            toggleFormDisabled(false);
-        });
+function addComment(text) {
+  return fetch(`${API_URL}/${PERSONAL_KEY}/comments`, { method:'POST', headers: getHeaders(), body: JSON.stringify({text}) })
+    .then(readResponse)
+    .then(({ok, data, status})=>{
+      if(!ok) throw new Error(data?.error || `Ошибка добавления комментария (${status})`);
+      return data;
+    });
+}
+
+function toggleLike(commentId) {
+  const btn = document.querySelector(`.like-button[data-id="${commentId}"]`);
+  const counter = btn.previousElementSibling;
+  fetch(`${API_URL}/${PERSONAL_KEY}/comments/${commentId}/toggle-like`, { method:'POST', headers:getHeaders() })
+    .then(readResponse)
+    .then(({ok,data})=>{
+      if(!ok) throw new Error(data?.error || 'Ошибка лайка');
+      if(counter) counter.textContent = data.result.likes;
+      if(btn) btn.classList.toggle('-active-like', data.result.isLiked);
+    })
+    .catch(err=>alert(err.message));
+}
+
+// --- Рендер ---
+function renderComments(comments) {
+  if(!comments || comments.length===0) {
+    commentsList.innerHTML = '<div class="no-comments">Пока нет комментариев</div>';
+    return;
+  }
+
+  commentsList.innerHTML = comments.map(c=>`
+    <li class="comment" data-id="${c.id}">
+      <div class="comment-header">
+        <div class="author">${escapeHtml(c.author.name)}</div>
+        <div class="date">${formatDate(c.date)}</div>
+      </div>
+      <div class="comment-body">
+        <div class="comment-text">${escapeHtml(c.text)}</div>
+      </div>
+      <div class="comment-footer">
+        <div class="likes">
+          <span class="likes-counter">${c.likes}</span>
+          <button class="like-button ${c.isLiked ? '-active-like' : ''}" data-id="${c.id}" ${!token ? 'disabled' : ''}>
+            <svg viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5
+              2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09
+              C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5
+              c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </li>
+  `).join('');
+
+  document.querySelectorAll('.like-button').forEach(btn=>{
+    if(!btn.disabled) btn.addEventListener('click',()=>toggleLike(btn.dataset.id));
+  });
+}
+
+// --- Обновление комментариев ---
+function refreshComments() {
+  commentsList.innerHTML = '<div class="loading">Комментарии загружаются...</div>';
+  getCommentsList()
+    .then(renderComments)
+    .catch(err=>{
+      commentsList.innerHTML = `<div class="error">${escapeHtml(err.message)}</div>`;
+    });
+}
+
+// --- Авторизация UI ---
+function updateAuthUI() {
+  if(token && currentUser){
+    userInfo.textContent = `${currentUser.name} (${currentUser.login})`;
+    logoutButton.style.display='inline-block';
+    openAuthButton.style.display='none';
+    openAuthButton2.style.display='none';
+    addFormLock.style.display='none';
+    textInput.disabled=false;
+    submitButton.disabled=false;
+  } else {
+    userInfo.textContent='Гость';
+    logoutButton.style.display='none';
+    openAuthButton.style.display='inline-block';
+    openAuthButton2.style.display='inline-block';
+    addFormLock.style.display='block';
+    textInput.disabled=true;
+    submitButton.disabled=true;
+  }
+  refreshComments();
+}
+
+function openAuthModal() { authModal.style.display='flex'; authStatus.textContent='Введите логин и пароль'; authStatus.style.color='#bcec30'; }
+function closeAuthModal(){ authModal.style.display='none'; loginInput.value=''; passwordInput.value=''; }
+
+// --- События ---
+textInput.addEventListener('keydown', e=>{if(e.key==='Enter'&&e.ctrlKey)addForm.dispatchEvent(new Event('submit'));});
+addForm.addEventListener('submit', e=>{
+  e.preventDefault();
+  if(!token){ openAuthModal(); return; }
+  const text = textInput.value.trim();
+  if(!text){ alert('Введите текст'); return; }
+  saveFormData();
+  toggleAddingIndicator(true,'Комментарий добавляется...');
+  toggleFormDisabled(true);
+  addComment(text)
+    .then(()=>{ textInput.value=''; currentFormData.text=''; refreshComments(); })
+    .catch(err=>{ alert(err.message); restoreFormData(); })
+    .finally(()=>{ toggleAddingIndicator(false); toggleFormDisabled(false); });
 });
 
-// Обработчики для сохранения данных формы при вводе
-nameInput.addEventListener('input', saveFormData);
-textInput.addEventListener('input', saveFormData);
+openAuthButton.addEventListener('click', openAuthModal);
+openAuthButton2.addEventListener('click', openAuthModal);
+closeAuthButton.addEventListener('click', closeAuthModal);
 
-// Инициализация приложения
-function initApp() {
-    return fetchInitialComments()
-        .then(comments => {
-            renderComments(comments);
-            return comments;
-        })
-        .catch(error => {
-            console.error('Ошибка инициализации:', error);
-        });
-}
+// Login
+loginButton.addEventListener('click', ()=>{
+  const login=loginInput.value.trim();
+  const password=passwordInput.value.trim();
+  if(!login||!password){ alert('Введите логин и пароль'); return; }
+  authStatus.textContent='Авторизация...'; authStatus.style.color='white';
+  loginUser(login,password)
+    .then(()=>{ closeAuthModal(); updateAuthUI(); })
+    .catch(err=>{ alert(err.message); authStatus.textContent='Ошибка'; authStatus.style.color='#ff6b6b'; });
+});
 
-// Запускаем приложение
-initApp();
+// Register
+registerButton.addEventListener('click', ()=>{
+  const login=loginInput.value.trim();
+  const password=passwordInput.value.trim();
+  if(!login||!password){ alert('Введите логин и пароль'); return; }
+  const name=prompt('Введите ваше имя:'); if(!name){ alert('Введите имя'); return; }
+  authStatus.textContent='Регистрация...'; authStatus.style.color='white';
+  registerUser(name.trim(), login, password)
+    .then(()=>{ closeAuthModal(); updateAuthUI(); alert('Вы вошли автоматически'); })
+    .catch(err=>{ alert(err.message); authStatus.textContent='Ошибка'; authStatus.style.color='#ff6b6b'; });
+});
+
+// Enter в форме авторизации
+loginInput.addEventListener('keypress', e=>{if(e.key==='Enter') loginButton.click();});
+passwordInput.addEventListener('keypress', e=>{if(e.key==='Enter') loginButton.click();});
+
+// Logout
+logoutButton.addEventListener('click', ()=>{
+  token=null; currentUser=null; localStorage.removeItem('token'); localStorage.removeItem('user'); updateAuthUI();
+});
+
+// Восстановление сессии
+document.addEventListener('DOMContentLoaded', ()=>{
+  const savedToken = localStorage.getItem('token');
+  const savedUser = localStorage.getItem('user');
+  if(savedToken && savedUser){ try{ token=savedToken; currentUser=JSON.parse(savedUser); } catch(e){ token=null; currentUser=null; } }
+  updateAuthUI();
+});
